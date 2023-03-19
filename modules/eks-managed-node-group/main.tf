@@ -303,10 +303,6 @@ locals {
   launch_template_id = var.create && var.create_launch_template ? try(aws_launch_template.this[0].id, null) : var.launch_template_id
   # Change order to allow users to set version priority before using defaults
   launch_template_version = coalesce(var.launch_template_version, try(aws_launch_template.this[0].default_version, "$Default"))
-  eks_node_group_ignored_changes = merge(
-    [ scaling_config[0].desired_size ],
-    additional_ignore_changes,
-  )
 }
 
 resource "aws_eks_node_group" "this" {
@@ -383,10 +379,10 @@ resource "aws_eks_node_group" "this" {
 
   lifecycle {
     create_before_destroy = true
-    ignore_changes = concat(
-      [ scaling_config[0].desired_size ],
-      additional_ignore_changes,
-    )
+    ignore_changes = [
+      scaling_config[0].desired_size,
+      "instance_types",
+    ]
   }
 
   tags = merge(
