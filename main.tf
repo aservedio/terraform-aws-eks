@@ -547,6 +547,44 @@ resource "kubernetes_config_map" "aws_auth" {
   }
 }
 
+data "aws_eks_cluster" "this" {
+  name = aws_eks_cluster.this[0].name
+  depends_on = [
+    aws_eks_cluster.this[0],
+  ]
+}
+
+data "aws_eks_cluster_auth" "this" {
+  name = aws_eks_cluster.this[0].name
+}
+
+resource "null_resource" "wait-aws-auth" {
+  depends_on = [
+    data.aws_eks_cluster_auth.this,
+    kubernetes_config_map.aws_auth,
+  ]
+  triggers = {}
+  provisioner "local-exec" {
+    command = <<EOH
+tmpfile=$(mktemp)
+cat >$tmpfile <<EOF
+${base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)}
+EOF
+timeout 180 sh <<-EOS
+until kubectl \
+  --server="${aws_eks_cluster.this[0].endpoint}" \
+  --certificate_authority=$tmpfile \
+  --token="${data.aws_eks_cluster_auth.this.token}" \
+  -n kube-system \
+  get configmap aws-auth; \
+  do sleep 5; \
+done
+EOS
+rm $tmpfile
+EOH
+  }
+}
+
 resource "kubernetes_config_map_v1_data" "aws_auth" {
   count = var.create && var.manage_aws_auth_configmap ? 1 : 0
 
@@ -562,5 +600,6 @@ resource "kubernetes_config_map_v1_data" "aws_auth" {
   depends_on = [
     # Required for instances where the configmap does not exist yet to avoid race condition
     kubernetes_config_map.aws_auth,
+    null_resource.wait-aws-auth,
   ]
 }
