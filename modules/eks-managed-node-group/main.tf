@@ -383,12 +383,10 @@ resource "aws_eks_node_group" "this" {
 
   lifecycle {
     create_before_destroy = true
-    dynamic "ignore_changes" {
-      for_each = local.eks_node_group_ignored_changes
-      content {
-        resources = ignore_changes.value
-      }
-    }
+    ignore_changes = concat(
+      [ scaling_config[0].desired_size ],
+      additional_ignore_changes,
+    )
   }
 
   tags = merge(
