@@ -379,9 +379,9 @@ resource "aws_eks_node_group" "this" {
 
   lifecycle {
     create_before_destroy = true
-    ignore_changes = [
-      scaling_config[0].desired_size,
-    ]
+    ignore_changes = merge(
+      [ scaling_config[0].desired_size ],
+      additional_ignore_changes,
   }
 
   tags = merge(

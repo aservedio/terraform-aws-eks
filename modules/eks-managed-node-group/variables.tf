@@ -400,6 +400,12 @@ variable "timeouts" {
   default     = {}
 }
 
+variable "additional_ignore_changes" {
+  description = "Additional attribute names to ignore changes on"
+  type        = list(string)
+  default     = []
+}
+
 ################################################################################
 # IAM Role
 ################################################################################
