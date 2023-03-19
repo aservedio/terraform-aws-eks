@@ -381,6 +381,7 @@ resource "aws_eks_node_group" "this" {
     create_before_destroy = true
     ignore_changes = [
       scaling_config[0].desired_size,
+      # Needed likely for my own specific use case, and was impossible to achieve otherwise.
       instance_types,
     ]
   }
