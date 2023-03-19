@@ -558,6 +558,8 @@ data "aws_eks_cluster_auth" "this" {
   name = aws_eks_cluster.this[0].name
 }
 
+# This is to patch a recurring issue where kubernetes_config_map_v1_data.aws_auth starts
+# as if the configmap exist, but then throws an error that it does not exist when it tries to use it.
 resource "null_resource" "wait-aws-auth" {
   depends_on = [
     data.aws_eks_cluster_auth.this,
